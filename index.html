@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<!-- Lock viewport, no zoom -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Emoji Planner - More Vertical Space</title>
+<style>
+  html, body {
+    margin:0; padding:0; width:100%; height:100%;
+    background:#cce7ff;
+    font-family:sans-serif; user-select:none; -webkit-user-select:none;
+    touch-action:manipulation; overflow:hidden; -webkit-text-size-adjust:100%;
+  }
+  body, button { font-weight:bold; }
+
+  .cloud-layer {
+    position:absolute; width:200%; height:200%;
+    top:-50%; left:-50%; background-repeat:repeat;
+    background-size:100px 100px; pointer-events:none; z-index:-1; opacity:0.3;
+  }
+  .cloud-layer:nth-child(1) {
+    background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" style="font-size:30px;">☁️</text></svg>');
+    animation:clouds1 60s linear infinite;
+  }
+  .cloud-layer:nth-child(2) {
+    background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="50" y="70" style="font-size:30px;">☁️</text></svg>');
+    animation:clouds2 90s linear infinite reverse;
+  }
+
+  @keyframes clouds1 {
+    0%{transform:translate(0,0);}
+    100%{transform:translate(50%,0);}
+  }
+  @keyframes clouds2 {
+    0%{transform:translate(0,0);}
+    100%{transform:translate(-50%,0);}
+  }
+
+  .app-container {
+    position:relative; width:100%; height:100%; display:flex; flex-direction:column; overflow:hidden;
+  }
+
+  header {
+    background:#1c82e8;
+    height:8vh;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0 2vw; box-sizing:border-box;
+    color:#fff; font-size:2vh;
+  }
+  header h1 {
+    margin:0; text-transform:uppercase; letter-spacing:1px; font-size:2.5vh;
+  }
+
+  .header-buttons {
+    display:flex; align-items:center; gap:2vw;
+  }
+
+  button {
+    background:#004ea8; color:#fff; border:none; border-radius:3px;
+    padding:0.5vh 1vw; font-size:2vh; cursor:pointer; box-shadow:0 2px #002f6b;
+  }
+  button:active {
+    transform:translateY(1px); box-shadow:none;
+  }
+
+  .toggle-container {
+    background:#fff; width:5vw; height:5vw; min-width:30px; min-height:30px;
+    border-radius:50%; position:relative; cursor:pointer; box-shadow:inset 0 0 3px rgba(0,0,0,0.2);
+  }
+
+  .toggle-circle {
+    position:absolute; top:2px; left:2px;
+    width:calc(5vw -4px); height:calc(5vw -4px);
+    background:#1c82e8; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5vh; color:#fff; overflow:hidden; transition:all 0.3s ease;
+  }
+
+  .toggle-container.on { background:#cce7ff; }
+  .toggle-container.on .toggle-circle {
+    left:calc(5vw - (5vw -4px) -2px);
+  }
+
+  @keyframes wobble {
+    0%{transform:rotate(0deg);}
+    20%{transform:rotate(-10deg);}
+    40%{transform:rotate(10deg);}
+    60%{transform:rotate(-10deg);}
+    80%{transform:rotate(10deg);}
+    100%{transform:rotate(0deg);}
+  }
+
+  .toggle-container.on .toggle-circle .thumb {
+    animation:wobble 1s infinite;
+  }
+
+  /* Slightly reduce top sections height to give more vertical space for categories */
+  .sectors {
+    height:18vh; 
+    display:flex; align-items:center; justify-content:center; gap:3vw;
+    padding:1vh 2vw; box-sizing:border-box;
+  }
+
+  .sector {
+    background:#90c2ff; border:2px solid #1c82e8; border-radius:4px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:1vh 1vw; box-sizing:border-box; min-width:20vw;
+  }
+
+  .sector h2 {
+    margin:0; font-size:3vh; color:#fff; letter-spacing:1px; text-shadow:1px 1px #004ea8;
+    margin-bottom:1vh; text-align:center;
+  }
+
+  /* 2x2 grid placeholders: 5vw each, 1vw gap */
+  .placeholder-grid {
+    display:grid;
+    grid-template-columns:repeat(2,5vw);
+    grid-template-rows:repeat(2,5vw);
+    gap:1vw;
+    justify-content:center; 
+    align-items:center;
+  }
+
+  .placeholder {
+    width:5vw; height:5vw; min-width:25px; min-height:25px;
+    background:#eaf6ff; border:2px solid #1c82e8; border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.5vh; color:#1c82e8; position:relative; flex-shrink:0;
+  }
+  .placeholder.has-emoji {
+    background:#cce7ff;
+  }
+
+  /* More vertical space in categories:
+     Increase vertical space and allow for more comfortable scrolling.
+     We'll pick 18 columns again but now we ensure no overlapping by ensuring stable rows.
+  */
+  .main-content {
+    flex:1; overflow-y:auto; background:#fff; box-sizing:border-box;
+    padding:2vh 0; display:flex; flex-direction:column; gap:3vh; /* more vertical padding */
+  }
+
+  .category-block {
+    background:#eaf6ff; border:2px solid #1c82e8; border-radius:4px;
+    display:flex; flex-direction:column; box-sizing:border-box;
+    padding:2vh 0; gap:2vh; align-items:center; /* more vertical padding between title and grid */
+  }
+
+  .category-block h3 {
+    margin:0; font-size:2vh; color:#1c82e8; text-transform:uppercase; letter-spacing:0.5px;
+    text-shadow:1px 1px #004ea8; text-align:center;
+  }
+
+  /* Emojis: 5vw x5vw, 3px gap, 18 columns */
+  /* Adjusting to 18 columns:
+     18*5vw=90vw wide +17 gaps*3px=about51px total gap.
+     90vw ~ (on 375px screen, 1vw~3.75px, 90vw~337.5px +51px=388.5px > 375px)
+     Let's try 17 columns to reduce horizontal overflow:
+     17 columns *5vw=85vw (~318.75px) +16 gaps*3px=48px total =318.75+48≈366.75px on 375px width.
+     ~8px margin total ~4px each side. Good stable margin.
+  */
+  .emoji-grid {
+    display:grid;
+    grid-template-columns:repeat(17,5vw);
+    grid-auto-rows:5vw;
+    gap:3px;
+    width:calc((17 * 5vw) + (16 * 3px));
+    margin:0 auto; /* center horizontally */
+  }
+
+  .emoji-item {
+    box-sizing:border-box;
+    width:5vw; height:5vw; min-width:25px; min-height:25px;
+    background:#cce7ff; border:2px solid #1c82e8; border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.5vh; cursor:grab; animation:floaty 2s infinite alternate;
+  }
+
+  @keyframes floaty {
+    0%{transform:translateY(0);}
+    100%{transform:translateY(-1px);}
+  }
+
+  .emoji-item:active { cursor:grabbing; }
+  .emoji-item.dragging {
+    opacity:0.8; transform:scale(1.1);
+    animation:none; z-index:9999; pointer-events:none; position:fixed;
+  }
+</style>
+</head>
+<body>
+<div class="cloud-layer"></div>
+<div class="cloud-layer"></div>
+<div class="app-container">
+  <header>
+    <h1>Emoji Planner</h1>
+    <div class="header-buttons">
+      <button id="resetBtn">Reset</button>
+      <div class="toggle-container" id="homeworkToggle"><div class="toggle-circle"></div></div>
+    </div>
+  </header>
+
+  <div class="sectors">
+    <div class="sector" data-sector="morning">
+      <h2>Morning</h2>
+      <div class="placeholder-grid" id="morningGrid"></div>
+    </div>
+    <div class="sector" data-sector="midday">
+      <h2>Midday</h2>
+      <div class="placeholder-grid" id="middayGrid"></div>
+    </div>
+    <div class="sector" data-sector="evening">
+      <h2>Evening</h2>
+      <div class="placeholder-grid" id="eveningGrid"></div>
+    </div>
+  </div>
+
+  <div class="main-content" id="mainContent"></div>
+</div>
+
+<script>
+document.addEventListener('gesturestart', e=>e.preventDefault());
+document.addEventListener('touchstart', e=>{
+  if(e.touches.length>1)e.preventDefault();
+},{passive:false});
+
+const homeworkToggle=document.getElementById('homeworkToggle');
+const toggleCircle=homeworkToggle.querySelector('.toggle-circle');
+const resetBtn=document.getElementById('resetBtn');
+const mainContent=document.getElementById('mainContent');
+
+let homeworkOn=false;
+
+const catNames=["morning","work","food","fitness","fun","travel","study","party"];
+const baseEmojis=["☀️","☕","🥐","🏃‍♀️","💻","📚","✏️","📅","🍎","🍔","🍣","🍕","🌈","🎉","🎮","🍿","🎨","🏋️","🚴‍♂️","🧘‍♂️","🏊‍♀️","🏃‍♂️","🎵","🎧","🎬","🎲","🤹","🪁","📖","💼","🧺","📝","📧","🔒","🥗","🍰","🍇","🌮","🎧","🤸","🥋","🤼","🪂","⛹️","🪴","🪄","🎂","🎀","🔑"];
+
+const CATEGORIES={};
+catNames.forEach(cat=>{
+  let emojis=[];
+  for(let i=0;i<50;i++){
+    emojis.push(baseEmojis[i % baseEmojis.length]);
+  }
+  CATEGORIES[cat]=emojis;
+});
+
+// 4 placeholders per sector, no plus button
+let layout={ 
+  morning:[null,null,null,null], 
+  midday:[null,null,null,null], 
+  evening:[null,null,null,null] 
+};
+
+function loadLayout(){
+  const data=localStorage.getItem('pixelPlannerLayoutV3');
+  if(data) layout=JSON.parse(data);
+}
+
+function saveLayout(){
+  localStorage.setItem('pixelPlannerLayoutV3',JSON.stringify(layout));
+}
+
+function initSectors(){
+  initSector('morning');
+  initSector('midday');
+  initSector('evening');
+}
+
+function initSector(sectorName){
+  const grid=document.getElementById(sectorName+'Grid');
+  grid.innerHTML='';
+  layout[sectorName].forEach(emoji=>{
+    grid.appendChild(createPlaceholder(emoji));
+  });
+}
+
+function createPlaceholder(emoji){
+  const ph=document.createElement('div');
+  ph.className='placeholder';
+  if(emoji){
+    ph.classList.add('has-emoji');
+    ph.textContent=emoji;
+  }
+  return ph;
+}
+
+function initCategories(){
+  mainContent.innerHTML='';
+  catNames.forEach(catName=>{
+    const block=document.createElement('div');
+    block.className='category-block';
+    const h3=document.createElement('h3');
+    h3.textContent=catName;
+    block.appendChild(h3);
+
+    const grid=document.createElement('div');
+    grid.className='emoji-grid';
+    (CATEGORIES[catName]||[]).forEach(eChar=>{
+      const item=createEmojiItem(eChar);
+      grid.appendChild(item);
+    });
+    block.appendChild(grid);
+
+    mainContent.appendChild(block);
+  });
+}
+
+function createEmojiItem(eChar){
+  const item=document.createElement('div');
+  item.className='emoji-item';
+  item.textContent=eChar;
+  item.addEventListener('touchstart',handleEmojiTouchStart);
+  return item;
+}
+
+let dragElement=null;
+
+function handleEmojiTouchStart(e){
+  const touch=e.touches[0];
+  dragElement=e.currentTarget;
+  dragElement.classList.add('dragging');
+  positionDragElement(touch.clientX,touch.clientY);
+  document.addEventListener('touchmove',handleEmojiTouchMove,{passive:false});
+  document.addEventListener('touchend',handleEmojiTouchEnd);
+}
+
+function handleEmojiTouchMove(e){
+  e.preventDefault();
+  const touch=e.touches[0];
+  positionDragElement(touch.clientX,touch.clientY);
+}
+
+function handleEmojiTouchEnd(e){
+  document.removeEventListener('touchmove',handleEmojiTouchMove);
+  document.removeEventListener('touchend',handleEmojiTouchEnd);
+  if(dragElement){
+    const touch=e.changedTouches[0];
+    const elemBelow=document.elementFromPoint(touch.clientX,touch.clientY);
+    const placeholder=elemBelow?elemBelow.closest('.placeholder'):null;
+    if(placeholder && !placeholder.classList.contains('has-emoji')){
+      placeholder.textContent=dragElement.textContent;
+      placeholder.classList.add('has-emoji');
+      updateLayoutFromDOM();
+      saveLayout();
+    }
+    dragElement.classList.remove('dragging');
+    dragElement.style.position='';
+    dragElement.style.left='';
+    dragElement.style.top='';
+    dragElement=null;
+  }
+}
+
+function positionDragElement(x,y){
+  if(dragElement){
+    const w=dragElement.offsetWidth;
+    const h=dragElement.offsetHeight;
+    dragElement.style.position='fixed';
+    dragElement.style.left=(x-w/2)+'px';
+    dragElement.style.top=(y-h/2)+'px';
+  }
+}
+
+function updateLayoutFromDOM(){
+  ['morning','midday','evening'].forEach(name=>{
+    const grid=document.getElementById(name+'Grid');
+    const placeholders=grid.querySelectorAll('.placeholder');
+    let newArr=[];
+    placeholders.forEach(ph=>{
+      if(ph.classList.contains('has-emoji')){
+        newArr.push(ph.textContent);
+      } else {
+        newArr.push(null);
+      }
+    });
+    layout[name]=newArr;
+  });
+}
+
+homeworkToggle.addEventListener('click',()=>{
+  homeworkOn=!homeworkOn;
+  homeworkToggle.classList.toggle('on',homeworkOn);
+  if(homeworkOn){
+    toggleCircle.innerHTML='<span class="thumb">👍</span>';
+  } else {
+    toggleCircle.innerHTML='';
+  }
+});
+
+resetBtn.addEventListener('click',()=>{
+  layout={morning:[null,null,null,null], midday:[null,null,null,null], evening:[null,null,null,null]};
+  initSectors();
+  saveLayout();
+  alert("All placeholders cleared!");
+});
+
+loadLayout();
+initSectors();
+initCategories();
+</script>
+</body>
+</html>
